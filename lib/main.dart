@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_google_maps/services/database.dart';
 import 'package:google_maps/google_maps.dart' hide Icon;
 import 'dart:html';
 import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
 
 import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,7 +15,7 @@ import 'package:flutter_google_places_web/flutter_google_places_web.dart';
 
 import 'package:firebase_database/firebase_database.dart';
 
-//import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 const kGoogleApiKey = "AIzaSyALa8yFRu0LfbZG0t2q9yzktvwWCfOGf2M";
@@ -68,6 +70,10 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _controller2;
   TextEditingController _controller3;
   TextEditingController _controller4;
+
+  TextEditingController _notesController = TextEditingController();
+  TextEditingController _priceController = TextEditingController();
+  TextEditingController _sizeController = TextEditingController();
   //String _initialValue;
   String _valueChanged1 = '';
   String _valueToValidate1 = '';
@@ -92,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initializeFlutterFire() async {
     try {
       // Wait for Firebase to initialize and set `_initialized` state to true
-      await Firebase.initializeApp();
+      // await Firebase.initializeApp();
       setState(() {
         _initialized = true;
         print(_initialized);
@@ -226,18 +232,19 @@ class _MyHomePageState extends State<MyHomePage> {
   )
       ),
    TextFormField(
+  controller: _notesController,
   decoration: const InputDecoration(
     labelText: 'Notes ',
   )
    ),
    TextFormField(
-     
-  decoration: const InputDecoration(
+       controller: _priceController,
+       decoration: const InputDecoration(
     labelText: 'Price ',
   )
   ),
    TextFormField(
-     
+  controller: _sizeController,
   decoration: const InputDecoration(
     labelText: 'size ',
   )
@@ -250,7 +257,15 @@ class _MyHomePageState extends State<MyHomePage> {
   ),
    RaisedButton(
             child: Text('View Record'),
-            onPressed: () {
+            onPressed: () async {
+              print("${_notesController.text} ${_priceController.text} ${_sizeController.text}");
+                await DatabaseService(uid: "0").updateOrderData(
+                    _notesController.text,
+                    _priceController.text,
+                    _sizeController.text
+                );
+                Navigator.pop(context);
+
             },
           ),
            ],
@@ -279,7 +294,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       final mapOptions = new MapOptions()
         ..zoom = 8
-        ..center = new LatLng(45.2669444, 46.87765);
+        ..center = new LatLng(45.2669444, 96.87765);
 
       final elem = DivElement()
         ..id = htmlId
@@ -290,7 +305,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final map = new GMap(elem, mapOptions);
 
       Marker(MarkerOptions()
-        ..position = LatLng(45.2669444, 46.87765)
+        ..position = LatLng(45.2669444, 96.87765)
         ..map = map
         ..title = 'Hello World!'
         );

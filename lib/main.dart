@@ -1,3 +1,5 @@
+import 'dart:js';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_web_google_maps/services/database.dart';
 import 'package:google_maps/google_maps.dart' hide Icon;
@@ -9,16 +11,25 @@ import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:search_map_place/search_map_place.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:firebase_core/firebase_core.dart';
+//import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_web_image_picker/flutter_web_image_picker.dart';
 import 'package:flutter_google_places_web/flutter_google_places_web.dart';
 
-import 'package:firebase_database/firebase_database.dart';
+//import 'package:firebase_database/firebase_database.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_google_places/flutter_google_places.dart';
+import 'package:google_maps_webservice/places.dart' hide Location;
+
+
+import 'package:location/location.dart';
+
+import 'models/order.dart';
 
 
 const kGoogleApiKey = "AIzaSyALa8yFRu0LfbZG0t2q9yzktvwWCfOGf2M";
+GoogleMapsPlaces _places = GoogleMapsPlaces(apiKey: kGoogleApiKey);
+
 
 void main() => runApp(MyApp());
 
@@ -88,13 +99,19 @@ class _MyHomePageState extends State<MyHomePage> {
   String _valueToValidate4 = '';
   String _valueSaved4 = '';
 
+  Location location = new Location();
+  LocationData _locationData;
 
+
+// to get places detail (lat/lng)
   //FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   bool _initialized = false;
   bool _error = false;
 
- // Define an async function to initialize FlutterFire
+
+
+  // Define an async function to initialize FlutterFire
   void initializeFlutterFire() async {
     try {
       // Wait for Firebase to initialize and set `_initialized` state to true
@@ -103,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _initialized = true;
         print(_initialized);
       });
-    } catch(e) {
+    } catch (e) {
       // Set `_error` state to true if Firebase initialization fails
       setState(() {
         print(_initialized);
@@ -111,13 +128,28 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
-     void initState() {
+
+  _postOrder(){
+    Order order = Order();
+  }
+
+  void initState() {
     initializeFlutterFire();
-  
+    _getUserLocation();
+
+
+    // Geolocator().getCurrentPosition().then((Position currloc) {
+    //   setState(() {
+    //     _initialPosition = LatLng(currloc.latitude, currloc.longitude);
+    //   });
+    // });
+
+
 
 
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -132,156 +164,144 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-       body:
-      Row(
-        children: [
-       Flexible(
-         child: 
-        Container(
-        child:  
-         Column(
-           children: [
-       
-     
-           Text(
-                'Pickup Place',
-              ),
-       
-              FlutterGooglePlacesWeb(
-                apiKey: kGoogleApiKey,
-                proxyURL: 'https://cors-anywhere.herokuapp.com/',
+      body: Row(children: [
+        Flexible(
+          child: Container(
+            child: ListView(
+              children: [
+                Text(
+                  'Pickup Place',
                 ),
-              Text(
-                   'Destination Place',
-              ),
-       
-              FlutterGooglePlacesWeb(
-                apiKey: kGoogleApiKey,
-                proxyURL: 'https://cors-anywhere.herokuapp.com/',
+                FlutterGooglePlacesWeb(
+                  apiKey: kGoogleApiKey,
+                  proxyURL: 'https://cors-anywhere.herokuapp.com/',
                 ),
-        
-     
-        
-        SingleChildScrollView(
-                  padding: EdgeInsets.only(left: 20, right: 20, top: 10),
-                  child: Form(
-                    key: _oFormKey,
-                    child: Column(
-                      children: <Widget>[
-                       Text("pickup"),
-
-                        DateTimePicker(
-                          type: DateTimePickerType.dateTimeSeparate,
-                          dateMask: 'd MMM, yyyy',
-                          controller: _controller1,
-                          //initialValue: _initialValue,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          icon: Icon(Icons.event),
-                          dateLabelText: 'Date',
-                          timeLabelText: "Hour",
-                          selectableDayPredicate: (date) {
-                            if (date.weekday == 6 || date.weekday == 7) {
-                              return false;
-                            }
-                            return true;
-                          },
-                          onChanged: (val) => setState(() => _valueChanged1 = val),
-                          validator: (val) {
-                            setState(() => _valueToValidate1 = val);
-                            return null;
-                          },
-                          onSaved: (val) => setState(() => _valueSaved1 = val),
-                        ),
-                        SizedBox(height: 20,),
-                        Text("drop off"),
-                        DateTimePicker(
-                          type: DateTimePickerType.time,
-                          controller: _controller4,
-                          //initialValue: _initialValue,
-                          icon: Icon(Icons.access_time),
-                          timeLabelText: "Time",
-                          onChanged: (val) => setState(() => _valueChanged4 = val),
-                          validator: (val) {
-                            setState(() => _valueToValidate4 = val);
-                            return null;
-                          },
-                          onSaved: (val) => setState(() => _valueSaved4 = val),
-                        ),
-                        SizedBox(height: 20),
-                       
-                        
-                      ],
-                    ),
+                Text(
+                  'Destination Place',
+                ),
+                FlutterGooglePlacesWeb(
+                  apiKey: kGoogleApiKey,
+                  proxyURL: 'https://cors-anywhere.herokuapp.com/',
+                ),
+                Form(
+                  key: _oFormKey,
+                  child: Column(
+                    children: <Widget>[
+                      Text("pickup"),
+                      DateTimePicker(
+                        type: DateTimePickerType.dateTimeSeparate,
+                        dateMask: 'd MMM, yyyy',
+                        controller: _controller1,
+                        //initialValue: _initialValue,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        icon: Icon(Icons.event),
+                        dateLabelText: 'Date',
+                        timeLabelText: "Hour",
+                        selectableDayPredicate: (date) {
+                          if (date.weekday == 6 || date.weekday == 7) {
+                            return false;
+                          }
+                          return true;
+                        },
+                        onChanged: (val) =>
+                            setState(() => _valueChanged1 = val),
+                        validator: (val) {
+                          setState(() => _valueToValidate1 = val);
+                          return null;
+                        },
+                        onSaved: (val) => setState(() => _valueSaved1 = val),
+                      ),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      Text("drop off"),
+                      DateTimePicker(
+                        type: DateTimePickerType.time,
+                        controller: _controller4,
+                        //initialValue: _initialValue,
+                        icon: Icon(Icons.access_time),
+                        timeLabelText: "Time",
+                        onChanged: (val) =>
+                            setState(() => _valueChanged4 = val),
+                        validator: (val) {
+                          setState(() => _valueToValidate4 = val);
+                          return null;
+                        },
+                        onSaved: (val) => setState(() => _valueSaved4 = val),
+                      ),
+                      SizedBox(height: 20),
+                    ],
                   ),
                 ),
-
-        FloatingActionButton(
-        child: Icon(Icons.open_in_browser),
-        onPressed: () async {
-          final _image = await FlutterWebImagePicker.getImage;
-          setState(() {
-            image = _image;
-          });
-        },
-      ),
-
-      TextFormField(
-  decoration: const InputDecoration(
-    labelText: 'Name ',
-  )
-      ),
-   TextFormField(
-  controller: _notesController,
-  decoration: const InputDecoration(
-    labelText: 'Notes ',
-  )
-   ),
-   TextFormField(
-       controller: _priceController,
-       decoration: const InputDecoration(
-    labelText: 'Price ',
-  )
-  ),
-   TextFormField(
-  controller: _sizeController,
-  decoration: const InputDecoration(
-    labelText: 'size ',
-  )
-  ),
-   TextFormField(
-     
-  decoration: const InputDecoration(
-    labelText: 'volume ',
-  )
-  ),
-   RaisedButton(
-            child: Text('View Record'),
-            onPressed: () async {
-              print("${_notesController.text} ${_priceController.text} ${_sizeController.text}");
-                await DatabaseService(uid: "0").updateOrderData(
-                    _notesController.text,
-                    _priceController.text,
-                    _sizeController.text
-                );
-                Navigator.pop(context);
-
-            },
+                FloatingActionButton(
+                  child: Icon(Icons.open_in_browser),
+                  onPressed: () async {
+                    final _image = await FlutterWebImagePicker.getImage;
+                    setState(() {
+                      image = _image;
+                    });
+                  },
+                ),
+                TextFormField(
+                    decoration: const InputDecoration(
+                  labelText: 'Name ',
+                )),
+                TextFormField(
+                    controller: _notesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes ',
+                    )),
+                TextFormField(
+                    controller: _priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Price ',
+                    )),
+                TextFormField(
+                    controller: _sizeController,
+                    decoration: const InputDecoration(
+                      labelText: 'size ',
+                    )),
+                TextFormField(
+                    decoration: const InputDecoration(
+                  labelText: 'volume ',
+                )),
+                RaisedButton(
+                  child: Text('View Record'),
+                  // onPressed: () async {
+                  //   print(
+                  //       "${_notesController.text} ${_priceController.text} ${_sizeController.text}");
+                  //   await DatabaseService(uid: "0").updateOrderData(
+                  //       _notesController.text,
+                  //       _priceController.text,
+                  //       _sizeController.text);
+                  //   Navigator.pop(context);
+                  // },
+                ),
+              ],
+            ),
           ),
-           ],
-           
-         ),
         ),
-         
-      ),
-      Flexible(
-           child:
-            Container(
-             child: getMap(),
-      ),
-      ),
-        ]
-    ),
+        Flexible(
+          child: Container(
+            child: FutureBuilder<LocationData>(
+              future: _getUserLocation(),
+              builder: (BuildContext context, AsyncSnapshot<LocationData> snapshot){
+                if(snapshot.connectionState == ConnectionState.waiting){
+                  return Center(child: CircularProgressIndicator(),);
+                }
+                else if(snapshot.hasData){
+                  _locationData = snapshot.data;
+                  return getMap();
+                }
+                else{
+                  return Text("WTF");
+                }
+              },
+            ),
+          ),
+        ),
+      ]),
     );
   }
 
@@ -290,25 +310,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // ignore: undefined_prefixed_name
     ui.platformViewRegistry.registerViewFactory(htmlId, (int viewId) {
-
-
       final mapOptions = new MapOptions()
         ..zoom = 8
-        ..center = new LatLng(45.2669444, 96.87765);
+        ..center = new LatLng(_locationData.latitude, _locationData.longitude);
 
       final elem = DivElement()
         ..id = htmlId
         ..style.width = "100%"
         ..style.height = "100%"
         ..style.border = 'none';
-
       final map = new GMap(elem, mapOptions);
-
+      // map.onClicK
       Marker(MarkerOptions()
-        ..position = LatLng(45.2669444, 96.87765)
+        ..position = LatLng(_locationData.latitude, _locationData.longitude)
         ..map = map
-        ..title = 'Hello World!'
-        );
+        ..title = 'Hello World!');
 
       return elem;
     });
@@ -316,6 +332,17 @@ class _MyHomePageState extends State<MyHomePage> {
     return HtmlElementView(viewType: htmlId);
   }
 
- 
-  
-  }
+
+
+   Future<LocationData> _getUserLocation()  {
+     return location.getLocation();
+   }
+
+
+
+
+
+
+
+
+}

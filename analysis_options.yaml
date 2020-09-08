@@ -1,0 +1,4 @@
+analyzer:
+  errors:
+    # treat missing required parameters as a warning (not a hint)
+    undefined_prefixed_name: ignore
